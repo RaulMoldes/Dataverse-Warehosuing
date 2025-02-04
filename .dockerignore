@@ -1,7 +1,3 @@
-*/metastore_db/*
-*/derby.log
-*/spark-warehouse/*
-*/metadata/*
 */.idea/*
 */.DS_Store
 */.ipynb_checkpoints/*
