@@ -70,6 +70,7 @@ if response.status_code == 200:
     # Filter only csv files
     data_files = [file['dataFile'] for file in files if file['categories'] == ['2. Data']]
     print("Files to be processed:", len(data_files))
+    final_df = None
     for file in data_files:
         print(f"File Name: {file['filename']}")
         file_id = file.get('id', None)
@@ -109,18 +110,15 @@ if response.status_code == 200:
               print(f"Read time: {read_time - start_time}")
               df = preprocess_df(df, PREPROCESSING_CONFIG)
               preprocess_time = t.time()
-              print(f"Preprocess time: {preprocess_time - read_time}")  
+              print(f"Preprocess time: {preprocess_time - read_time}") 
 
+              if final_df is None:
+                final_df = df  # Si es la primera tabla, asignarla directamente
+              else:
+                final_df = final_df.unionByName(df, allowMissingColumns=True)  # Unir manteniendo columnas
             
+                final_df.coalesce(32)  # Coalesce the DataFrame
 
-              ## COALESCE TO REDUCE SHUFFLE
-              df = df.coalesce(32)
-              ## BUCKETING BY FLIGHTNUM AS WE ARE GOING TO USE IT AS AN AGGREGATION KEY
-              # Write data using bucketing (requires Hive table)
-              print(f"Writing data to Hive table")
-
-              table_name = f"flight_data_{file_id}"
-              df.write.bucketBy(32, "FlightNum").sortBy("FlightNum").format("parquet").option("compression", "snappy").mode("overwrite").saveAsTable(table_name)
               write_time = t.time() 
               print("Write time: ", write_time - preprocess_time)
               # df.explain(True)
@@ -129,5 +127,14 @@ if response.status_code == 200:
           print(f"Download url not found", file.keys())
     
 
+    if final_df is not None:
+        table_name = f"flights_{time}"
+        start_time = t.time()
+        print(f"Writing file {table_name}")
+        final_df.write.bucketBy(32, "FlightNum").sortBy("FlightNum").format("parquet").option("compression", "snappy").mode("overwrite").saveAsTable(table_name)
+        print("Writing time", t.time() - start_time)
+        # df.explain(True)
+
 else:
     print(f"Error al obtener los datos: {response.status_code}")
+
