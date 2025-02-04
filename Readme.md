@@ -1,3 +1,8 @@
+# DATAVERSE DATA INTEGRATION
+This Spark Job cleans and integrates the data from flights found at: https://dataverse.harvard.edu/api/v1/datasets/:persistentId?persistentId=doi:10.7910/DVN/HG7NV7
+
+The output is stored on a Hive table bucketed by FlightNumber.
+
 # INSTRUCTIONS TO BUILD AND RUN LOCALLY
 
 1. Build the image: Inside the project directory, execute:
