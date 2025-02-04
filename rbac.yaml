@@ -1,0 +1,49 @@
+# I NEED PERMISSIONS TO ACCESS THE KUBE DNS SERVICE AND THE API SERVER.
+# STEP 1: CREATE A SERVICE ACCOUNT
+
+# 1. kubectl create serviceaccount kube-access -n kube-system
+
+# Output: serviceaccount "kube-access" created
+
+# 2. kubectl get serviceaccount kube-access -n kube-system
+
+# 3. When you create a Service Account (SA) in Kubernetes, it automatically generates a secret that contains a bearer token for authentication. This secret is linked to the SA and is used to access the Kubernetes API.
+
+# 4. Check permissions have been applied:  kubectl auth can-i get / --as=system:serviceaccount:kube-system:kube-access -n kube-system
+
+# 5. Retrieve the secrets that have been associated with this service account: kubectl get serviceaccount kube-access -n kube-system -o yaml
+# Output: This will show the yaml file with the secret name.
+
+# 6. Retrieve the secret: TOKEN=$(kubectl get secret kube-access-token-stc2j -n kube-system -o jsonpath='{.data.token}' | base64 --decode)
+
+# 7. Use CURL to request the API: curl -k  -H "Authorization: Bearer $TOKEN"  https://<KUBERNETES-APISERVER>/api/v1/namespaces/kube-system/pods
+# You can find the api server by running: kubectl cluster-info
+
+## Role. The Role defines the permissions that the Service Account has. In this case, the Service Account has permission to access the kube-dns service and the API server.
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-access-clusterrole
+rules:
+  - apiGroups: [""]
+    resources: ["*"]
+    verbs: ["get", "list"]
+  - nonResourceURLs: ["*"]
+    verbs: ["get", "list"]
+---
+## RoleBinding. The Role Binding binds the Role to the Service Account.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-access-clusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: kube-access
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: kube-access-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+
