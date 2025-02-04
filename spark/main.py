@@ -64,7 +64,7 @@ if response.status_code == 200:
   
     dataset_info = response.json()
     files = dataset_info['data']['latestVersion']['files']
-    time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     print(f"Downloaded at: {time}")
     
     # Filter only csv files
